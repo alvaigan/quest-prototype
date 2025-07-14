@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Quest } from '@/lib/types';
-import { Edit, Trash2, Eye, Target, User, CheckSquare, Calendar } from 'lucide-react';
+import { Edit, Trash2, Eye, Target, User, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface QuestCardsProps {
@@ -13,7 +13,6 @@ interface QuestCardsProps {
   onEdit: (quest: Quest) => void;
   onDelete: (quest: Quest) => void;
   getPICName: (picId: string) => string;
-  getTaskCount?: (questId: string) => number;
 }
 
 export function QuestCards({ 
@@ -21,14 +20,11 @@ export function QuestCards({
   onView, 
   onEdit, 
   onDelete, 
-  getPICName,
-  getTaskCount 
+  getPICName
 }: QuestCardsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {quests.map((quest) => {
-        const taskCount = getTaskCount ? getTaskCount(quest.id) : 0;
-        
         return (
           <Card key={quest.id} className="hover:shadow-md transition-shadow duration-200 cursor-pointer"
                 onClick={() => onView(quest)}>
@@ -84,15 +80,20 @@ export function QuestCards({
                   </Badge>
                 </div>
 
-                {/* Task Count */}
+                {/* Status */}
                 <div className="flex items-center gap-2">
-                  <CheckSquare className="h-3 w-3 text-green-500" />
-                  <span className="text-xs font-medium">Tasks:</span>
+                  <div className={`h-2 w-2 rounded-full ${
+                    quest.status === 'Done' ? 'bg-green-500' :
+                    quest.status === 'On Progress' ? 'bg-blue-500' :
+                    quest.status === 'Ready' ? 'bg-yellow-500' :
+                    'bg-gray-500'
+                  }`} />
+                  <span className="text-xs font-medium">Status:</span>
                   <Badge 
-                    variant={taskCount > 0 ? "default" : "outline"} 
+                    variant="outline"
                     className="text-xs px-2 py-0.5"
                   >
-                    {taskCount} task{taskCount !== 1 ? 's' : ''}
+                    {quest.status}
                   </Badge>
                 </div>
 
@@ -104,22 +105,6 @@ export function QuestCards({
                     {format(quest.createdAt, 'MMM dd, yyyy')}
                   </span>
                 </div>
-
-                {/* Progress Indicator */}
-                {taskCount > 0 && (
-                  <div className="pt-2 border-t">
-                    <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-                      <span>Progress</span>
-                      <span>{taskCount} tasks total</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-1.5">
-                      <div 
-                        className="bg-purple-500 h-1.5 rounded-full transition-all duration-300"
-                        style={{ width: taskCount > 0 ? '20%' : '0%' }}
-                      />
-                    </div>
-                  </div>
-                )}
 
                 {/* Action Buttons */}
                 <div className="flex gap-2 pt-2">
@@ -133,7 +118,7 @@ export function QuestCards({
                     className="flex-1 text-xs"
                   >
                     <Eye className="h-3 w-3 mr-1" />
-                    View Tasks
+                    View Details
                   </Button>
                   <Button
                     variant="outline"

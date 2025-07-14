@@ -51,9 +51,9 @@ const navigationItems = [
   },
   {
     id: 'quests',
-    label: 'Quests & Tasks',
+    label: 'Quests',
     icon: Target,
-    description: 'Quests with associated tasks'
+    description: 'Manage organizational quests'
   },
   {
     id: 'attendance',

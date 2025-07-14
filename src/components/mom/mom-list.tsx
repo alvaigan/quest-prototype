@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useMoMStore } from '@/lib/stores/mom-store';
 import { MoMFormFullpage } from './mom-form-fullpage';
+import { MoMViewFullpage } from './mom-view-fullpage';
 import { MoMCards } from './mom-cards';
 import { Plus, Edit, Trash2, Eye, Calendar, Users, LayoutGrid, List } from 'lucide-react';
 import { MoM } from '@/lib/types';
@@ -19,7 +19,6 @@ export function MoMList() {
   const { moms, deleteMoM } = useMoMStore();
   const [selectedMoM, setSelectedMoM] = useState<MoM | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
-  const [showViewDialog, setShowViewDialog] = useState(false);
   const [dataViewMode, setDataViewMode] = useState<'table' | 'cards'>('cards');
 
   const handleEdit = (mom: MoM) => {
@@ -29,18 +28,26 @@ export function MoMList() {
 
   const handleView = (mom: MoM) => {
     setSelectedMoM(mom);
-    setShowViewDialog(true);
+    setViewMode('view');
   };
 
   const handleDelete = (mom: MoM) => {
     if (confirm(`Are you sure you want to delete "${mom.title}"?`)) {
       deleteMoM(mom.id);
+      // If we're currently viewing this MoM, go back to list
+      if (selectedMoM?.id === mom.id) {
+        handleBackToList();
+      }
     }
   };
 
   const handleBackToList = () => {
     setViewMode('list');
     setSelectedMoM(null);
+  };
+
+  const handleEditFromView = () => {
+    setViewMode('edit');
   };
 
   // Render fullpage form when in create or edit mode
@@ -57,6 +64,18 @@ export function MoMList() {
       <MoMFormFullpage
         mom={selectedMoM}
         onBack={handleBackToList}
+      />
+    );
+  }
+
+  // Render fullpage view when in view mode
+  if (viewMode === 'view' && selectedMoM) {
+    return (
+      <MoMViewFullpage
+        mom={selectedMoM}
+        onBack={handleBackToList}
+        onEdit={handleEditFromView}
+        onDelete={() => handleDelete(selectedMoM)}
       />
     );
   }
@@ -210,55 +229,6 @@ export function MoMList() {
           </Card>
         )}
       </div>
-
-
-
-      {/* View Dialog */}
-      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Meeting Minutes Details</DialogTitle>
-          </DialogHeader>
-          {selectedMoM && (
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-medium text-sm text-gray-600">Title</h4>
-                <p className="text-lg font-semibold">{selectedMoM.title}</p>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-medium text-sm text-gray-600">Meeting Date</h4>
-                  <p className="text-sm">{format(selectedMoM.date, 'MMMM dd, yyyy')}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-sm text-gray-600">Created</h4>
-                  <p className="text-sm">{format(selectedMoM.createdAt, 'MMM dd, yyyy')}</p>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-medium text-sm text-gray-600 mb-2">Attendees</h4>
-                <div className="flex flex-wrap gap-2">
-                  {selectedMoM.attendees.map((attendee) => (
-                    <Badge key={attendee} variant="outline">
-                      {attendee}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-medium text-sm text-gray-600 mb-2">Content</h4>
-                <div 
-                  className="prose prose-sm max-w-none p-4 border rounded-md bg-gray-50"
-                  dangerouslySetInnerHTML={{ __html: selectedMoM.content }}
-                />
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 } 

@@ -42,6 +42,7 @@ export interface MoM {
   content: string; // Rich text HTML
   location?: string; // Optional meeting location
   duration?: string; // Optional meeting duration
+  toFollowUp?: string; // Optional follow-up items
   createdAt: Date;
   updatedAt: Date;
   createdBy: string; // Manager ID
@@ -53,7 +54,8 @@ export interface Quest {
   title: string;
   description: string;
   assignedPICId: string; // Manager ID
-  associatedTaskIds: string[];
+  status: 'New' | 'Ready' | 'On Progress' | 'Done';
+  attachedMoMId?: string; // Optional MoM ID
   createdAt: Date;
   updatedAt: Date;
   createdBy: string; // Manager ID
@@ -123,4 +125,11 @@ export const TASK_STATUS_OPTIONS = [
   'In Progress',
   'Done',
   'Blocked'
+] as const;
+
+export const QUEST_STATUS_OPTIONS = [
+  'New',
+  'Ready',
+  'On Progress',
+  'Done'
 ] as const; 

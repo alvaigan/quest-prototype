@@ -6,18 +6,19 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQuestStore } from '@/lib/stores/quest-store';
 import { useAuthStore } from '@/lib/stores/auth-store';
-import { useTaskStore } from '@/lib/stores/task-store';
+import { useMoMStore } from '@/lib/stores/mom-store';
 import { QuestForm } from './quest-form';
-import { Plus, Edit, Trash2, Eye, Target, User, Calendar } from 'lucide-react';
-import { Quest } from '@/lib/types';
+import { Plus, Edit, Trash2, Eye, Target, User, Calendar, FileText, Flag } from 'lucide-react';
+import { Quest, QUEST_STATUS_OPTIONS } from '@/lib/types';
 import { format } from 'date-fns';
 
 export function QuestList() {
-  const { quests, deleteQuest } = useQuestStore();
+  const { quests, deleteQuest, updateQuest } = useQuestStore();
   const { managers } = useAuthStore();
-  const { tasks } = useTaskStore();
+  const { moms } = useMoMStore();
   const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -39,6 +40,10 @@ export function QuestList() {
     }
   };
 
+  const handleStatusChange = (questId: string, newStatus: string) => {
+    updateQuest(questId, { status: newStatus as Quest['status'] });
+  };
+
   const handleFormSuccess = () => {
     setShowAddDialog(false);
     setShowEditDialog(false);
@@ -50,10 +55,20 @@ export function QuestList() {
     return manager ? manager.name : 'Unknown';
   };
 
-  const getAssociatedTaskTitles = (taskIds: string[]) => {
-    return tasks
-      .filter(task => taskIds.includes(task.id))
-      .map(task => task.title);
+  const getMoMTitle = (momId?: string) => {
+    if (!momId) return null;
+    const mom = moms.find(m => m.id === momId);
+    return mom ? mom.title : 'Unknown MoM';
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'New': return 'bg-gray-100 text-gray-800';
+      case 'Ready': return 'bg-blue-100 text-blue-800';
+      case 'On Progress': return 'bg-orange-100 text-orange-800';
+      case 'Done': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
 
   return (
@@ -89,7 +104,8 @@ export function QuestList() {
               <TableRow>
                 <TableHead>Quest Title</TableHead>
                 <TableHead>PIC</TableHead>
-                <TableHead>Associated Tasks</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Attached MoM</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -117,22 +133,40 @@ export function QuestList() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {quest.associatedTaskIds.length === 0 ? (
-                        <span className="text-sm text-gray-500">No tasks</span>
-                      ) : (
-                        <>
-                          {getAssociatedTaskTitles(quest.associatedTaskIds).slice(0, 2).map((title) => (
-                            <Badge key={title} variant="secondary" className="text-xs">
-                              {title}
+                    <div className="flex items-center gap-2">
+                      <Flag className="h-4 w-4 text-gray-500" />
+                      <Select
+                        value={quest.status}
+                        onValueChange={(value) => handleStatusChange(quest.id, value)}
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue>
+                            <Badge className={getStatusColor(quest.status)}>
+                              {quest.status}
                             </Badge>
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {QUEST_STATUS_OPTIONS.map((status) => (
+                            <SelectItem key={status} value={status}>
+                              {status}
+                            </SelectItem>
                           ))}
-                          {quest.associatedTaskIds.length > 2 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{quest.associatedTaskIds.length - 2}
-                            </Badge>
-                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {quest.attachedMoMId ? (
+                        <>
+                          <FileText className="h-4 w-4 text-green-500" />
+                          <Badge variant="secondary" className="text-xs">
+                            {getMoMTitle(quest.attachedMoMId)}
+                          </Badge>
                         </>
+                      ) : (
+                        <span className="text-sm text-gray-500">No MoM attached</span>
                       )}
                     </div>
                   </TableCell>
@@ -231,24 +265,31 @@ export function QuestList() {
                   </div>
                 </div>
                 <div>
-                  <h4 className="font-medium text-sm text-gray-600">Created</h4>
-                  <p className="text-sm">{format(selectedQuest.createdAt, 'MMMM dd, yyyy')}</p>
+                  <h4 className="font-medium text-sm text-gray-600">Status</h4>
+                  <Badge className={getStatusColor(selectedQuest.status)}>
+                    {selectedQuest.status}
+                  </Badge>
                 </div>
               </div>
 
-              <div>
-                <h4 className="font-medium text-sm text-gray-600 mb-2">Associated Tasks</h4>
-                {selectedQuest.associatedTaskIds.length === 0 ? (
-                  <p className="text-sm text-gray-500">No tasks associated with this quest.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {getAssociatedTaskTitles(selectedQuest.associatedTaskIds).map((title) => (
-                      <Badge key={title} variant="secondary">
-                        {title}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium text-sm text-gray-600">Attached MoM</h4>
+                  {selectedQuest.attachedMoMId ? (
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-green-500" />
+                      <Badge variant="secondary">
+                        {getMoMTitle(selectedQuest.attachedMoMId)}
                       </Badge>
-                    ))}
-                  </div>
-                )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">No MoM attached</p>
+                  )}
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm text-gray-600">Created</h4>
+                  <p className="text-sm">{format(selectedQuest.createdAt, 'MMMM dd, yyyy')}</p>
+                </div>
               </div>
             </div>
           )}

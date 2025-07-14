@@ -15,13 +15,12 @@ import { format } from 'date-fns';
 
 interface TaskListProps {
   tasks: Task[];
-  questId?: string;
   onTaskUpdate?: () => void;
 }
 
 const TASK_STATUS_OPTIONS = ['To Do', 'In Progress', 'Done', 'Blocked'];
 
-export function TaskList({ tasks, questId, onTaskUpdate }: TaskListProps) {
+export function TaskList({ tasks, onTaskUpdate }: TaskListProps) {
   const { employees } = useEmployeeStore();
   const { deleteTask, updateTask } = useTaskStore();
   
@@ -189,7 +188,7 @@ export function TaskList({ tasks, questId, onTaskUpdate }: TaskListProps) {
       {tasks.length === 0 && (
         <div className="text-center py-8 text-gray-500">
           <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p>No tasks found for this quest.</p>
+          <p>No tasks found.</p>
         </div>
       )}
 
@@ -276,11 +275,10 @@ export function TaskList({ tasks, questId, onTaskUpdate }: TaskListProps) {
           <DialogHeader>
             <DialogTitle>Edit Task</DialogTitle>
           </DialogHeader>
-          <TaskForm
-            task={selectedTask || undefined}
-            questId={questId}
-            onSuccess={handleFormSuccess}
-            onCancel={() => setShowEditTaskDialog(false)}
+                      <TaskForm
+              task={selectedTask || undefined}
+              onSuccess={handleFormSuccess}
+              onCancel={() => setShowEditTaskDialog(false)}
           />
         </DialogContent>
       </Dialog>

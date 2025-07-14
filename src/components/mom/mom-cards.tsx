@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { MoM } from '@/lib/types';
-import { Edit, Trash2, Eye, Calendar, Users, FileText, Clock } from 'lucide-react';
+import { Edit, Trash2, Eye, Calendar, Users, FileText, Clock, CheckSquare } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface MoMCardsProps {
@@ -119,6 +119,22 @@ export function MoMCards({ moms, onView, onEdit, onDelete }: MoMCardsProps) {
                       </div>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* To Follow Up (if available) */}
+              {mom.toFollowUp && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckSquare className="h-3 w-3 text-orange-500" />
+                    <span className="text-xs font-medium text-gray-600">To Follow Up</span>
+                  </div>
+                  <div className="p-2 bg-orange-50 border border-orange-200 rounded text-xs">
+                    <p className="text-gray-700 line-clamp-3">
+                      {mom.toFollowUp.split('\n').slice(0, 2).join('\n')}
+                      {mom.toFollowUp.split('\n').length > 2 && '...'}
+                    </p>
+                  </div>
                 </div>
               )}
 

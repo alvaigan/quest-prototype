@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
@@ -16,7 +17,10 @@ const momSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   date: z.string().min(1, 'Date is required'),
   attendees: z.string().min(1, 'Attendees are required'),
+  location: z.string().optional(),
+  duration: z.string().optional(),
   content: z.string().min(1, 'Content is required'),
+  toFollowUp: z.string().optional(),
 });
 
 type MoMFormData = z.infer<typeof momSchema>;
@@ -38,7 +42,10 @@ export function MoMForm({ mom, onSuccess, onCancel }: MoMFormProps) {
       title: mom?.title || '',
       date: mom?.date ? mom.date.toISOString().split('T')[0] : '',
       attendees: mom?.attendees.join(', ') || '',
+      location: mom?.location || '',
+      duration: mom?.duration || '',
       content: mom?.content || '',
+      toFollowUp: mom?.toFollowUp || '',
     }
   });
 
@@ -109,6 +116,42 @@ export function MoMForm({ mom, onSuccess, onCancel }: MoMFormProps) {
           />
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            control={form.control}
+            name="location"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Location (Optional)</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="Enter meeting location" 
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="duration"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Duration (Optional)</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="e.g., 1 hour, 30 minutes" 
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
         <FormField
           control={form.control}
           name="content"
@@ -120,6 +163,24 @@ export function MoMForm({ mom, onSuccess, onCancel }: MoMFormProps) {
                   content={field.value}
                   onChange={field.onChange}
                   className="min-h-[300px]"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="toFollowUp"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>To Follow Up (Optional)</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Enter items that need follow-up actions..."
+                  className="min-h-[100px]"
+                  {...field}
                 />
               </FormControl>
               <FormMessage />

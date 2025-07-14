@@ -10,7 +10,6 @@ interface TaskState {
   getTaskById: (id: string) => Task | undefined;
   getTasksByEmployeeId: (employeeId: string) => Task[];
   getTasksByStatus: (status: Task['status']) => Task[];
-  getTasksByQuestId: (questId: string) => Task[];
 }
 
 export const useTaskStore = create<TaskState>((set, get) => ({
@@ -96,11 +95,5 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   
   getTasksByStatus: (status) => {
     return get().tasks.filter(task => task.status === status);
-  },
-  
-  getTasksByQuestId: (questId) => {
-    // For now, return tasks that have the questId in their attachedMoMIds
-    // This is a temporary solution to avoid circular dependency
-    return get().tasks.filter(task => task.attachedMoMIds?.includes(questId));
   }
 })); 

@@ -5,16 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useQuestStore } from '@/lib/stores/quest-store';
-import { useTaskStore } from '@/lib/stores/task-store';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { QuestForm } from './quest-form';
-import { QuestCards } from './quest-cards';
-import { TaskForm } from '../tasks/task-form';
-import { TaskKanban } from '../tasks/task-kanban';
-import { TaskList } from '../tasks/task-list';
-import { Plus, Edit, Trash2, Eye, Target, User, Calendar, ArrowLeft, CheckSquare, LayoutGrid, List } from 'lucide-react';
+import { QuestKanban } from './quest-kanban';
+import { Plus, Edit, Trash2, Eye, Target, User, Calendar, ArrowLeft, LayoutGrid, List } from 'lucide-react';
 import { Quest } from '@/lib/types';
 import { format } from 'date-fns';
 
@@ -22,14 +17,11 @@ type ViewMode = 'quest-list' | 'quest-detail' | 'create-quest' | 'edit-quest';
 
 export function QuestTasksPage() {
   const { quests, deleteQuest } = useQuestStore();
-  const { tasks, getTasksByQuestId } = useTaskStore();
   const { managers } = useAuthStore();
   
   const [viewMode, setViewMode] = useState<ViewMode>('quest-list');
   const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
-  const [showCreateTaskDialog, setShowCreateTaskDialog] = useState(false);
-  const [taskViewMode, setTaskViewMode] = useState<'kanban' | 'list'>('kanban');
-  const [questViewMode, setQuestViewMode] = useState<'table' | 'cards'>('cards');
+  const [questViewMode, setQuestViewMode] = useState<'table' | 'kanban'>('kanban');
 
   const handleViewQuest = (quest: Quest) => {
     setSelectedQuest(quest);
@@ -47,8 +39,6 @@ export function QuestTasksPage() {
     }
   };
 
-
-
   const handleBackToQuestList = () => {
     setViewMode('quest-list');
     setSelectedQuest(null);
@@ -59,8 +49,6 @@ export function QuestTasksPage() {
       setViewMode('quest-list');
       setSelectedQuest(null);
     }
-    // Close task dialogs
-    setShowCreateTaskDialog(false);
   };
 
   const getPICName = (picId: string) => {
@@ -115,13 +103,8 @@ export function QuestTasksPage() {
     );
   }
 
-  
-
-  // Quest Detail with Tasks
+  // Quest Detail View
   if (viewMode === 'quest-detail' && selectedQuest) {
-    const questTasks = getTasksByQuestId ? getTasksByQuestId(selectedQuest.id) : 
-                     tasks.filter(task => task.attachedMoMIds?.includes(selectedQuest.id));
-
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -132,13 +115,33 @@ export function QuestTasksPage() {
             </Button>
             <div>
               <h1 className="text-2xl font-bold">{selectedQuest.title}</h1>
-              <p className="text-muted-foreground">Quest Tasks Management</p>
+              <p className="text-muted-foreground">Quest Details</p>
             </div>
           </div>
-          <Button onClick={() => setShowCreateTaskDialog(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Task
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setViewMode('edit-quest')}
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Quest
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                handleDeleteQuest(selectedQuest);
+                if (quests.find(q => q.id === selectedQuest.id)) {
+                  // Quest still exists, deletion was cancelled
+                } else {
+                  // Quest was deleted, go back to list
+                  handleBackToQuestList();
+                }
+              }}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Quest
+            </Button>
+          </div>
         </div>
 
         {/* Quest Details Card */}
@@ -146,286 +149,225 @@ export function QuestTasksPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Target className="h-5 w-5 text-purple-500" />
-              Quest Details
+              Quest Information
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h4 className="font-medium text-sm text-gray-600">Description</h4>
-                <p className="text-sm">{selectedQuest.description}</p>
-              </div>
-              <div>
-                <h4 className="font-medium text-sm text-gray-600">Person In Charge (PIC)</h4>
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-blue-500" />
-                  <Badge variant="outline">{getPICName(selectedQuest.assignedPICId)}</Badge>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium text-sm text-gray-600 mb-2">Description</h4>
+                  <p className="text-sm leading-relaxed">{selectedQuest.description}</p>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium text-sm text-gray-600 mb-2">Status</h4>
+                  <div className="flex items-center gap-2">
+                    <div className={`h-3 w-3 rounded-full ${
+                      selectedQuest.status === 'Done' ? 'bg-green-500' :
+                      selectedQuest.status === 'On Progress' ? 'bg-blue-500' :
+                      selectedQuest.status === 'Ready' ? 'bg-yellow-500' :
+                      'bg-gray-500'
+                    }`} />
+                    <Badge variant="outline" className="text-sm">
+                      {selectedQuest.status}
+                    </Badge>
+                  </div>
                 </div>
               </div>
-              <div>
-                <h4 className="font-medium text-sm text-gray-600">Created</h4>
-                <p className="text-sm">{format(selectedQuest.createdAt, 'MMMM dd, yyyy')}</p>
-              </div>
-              <div>
-                <h4 className="font-medium text-sm text-gray-600">Total Tasks</h4>
-                <p className="text-sm font-medium">{questTasks.length} tasks</p>
+              
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium text-sm text-gray-600 mb-2">Person In Charge (PIC)</h4>
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-blue-500" />
+                    <Badge variant="outline" className="text-sm">
+                      {getPICName(selectedQuest.assignedPICId)}
+                    </Badge>
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium text-sm text-gray-600 mb-2">Created</h4>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm">{format(selectedQuest.createdAt, 'MMMM dd, yyyy')}</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium text-sm text-gray-600 mb-2">Last Updated</h4>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm">{format(selectedQuest.updatedAt, 'MMMM dd, yyyy')}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
-
-        {/* Tasks Section with View Toggle */}
-        <div>
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2">
-              <CheckSquare className="h-5 w-5 text-green-500" />
-              <h3 className="text-lg font-semibold">Tasks in this Quest ({questTasks.length})</h3>
-            </div>
-            
-            {/* View Mode Toggle */}
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-600">View:</span>
-              <div className="flex border rounded-lg p-1 bg-gray-50">
-                <Button
-                  variant={taskViewMode === 'kanban' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setTaskViewMode('kanban')}
-                  className="px-3 py-1 h-8"
-                >
-                  <LayoutGrid className="h-4 w-4 mr-2" />
-                  Kanban
-                </Button>
-                <Button
-                  variant={taskViewMode === 'list' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setTaskViewMode('list')}
-                  className="px-3 py-1 h-8"
-                >
-                  <List className="h-4 w-4 mr-2" />
-                  List
-                </Button>
-              </div>
-            </div>
-          </div>
-          
-          {questTasks.length === 0 ? (
-            <Card>
-              <CardContent className="py-12">
-                <div className="text-center text-gray-500">
-                  <CheckSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p>No tasks found for this quest.</p>
-                  <Button
-                    onClick={() => setShowCreateTaskDialog(true)}
-                    className="mt-4"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create First Task
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div>
-              {taskViewMode === 'kanban' ? (
-                <TaskKanban 
-                  tasks={questTasks} 
-                  questId={selectedQuest.id}
-                  onTaskUpdate={() => {
-                    // Force re-render
-                  }}
-                />
-              ) : (
-                <TaskList 
-                  tasks={questTasks} 
-                  questId={selectedQuest.id}
-                  onTaskUpdate={() => {
-                    // Force re-render
-                  }}
-                />
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Create Task Dialog */}
-        <Dialog open={showCreateTaskDialog} onOpenChange={setShowCreateTaskDialog}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Create New Task for &quot;{selectedQuest?.title}&quot;</DialogTitle>
-            </DialogHeader>
-            <TaskForm
-              questId={selectedQuest?.id}
-              onSuccess={handleFormSuccess}
-              onCancel={() => setShowCreateTaskDialog(false)}
-            />
-          </DialogContent>
-        </Dialog>
       </div>
     );
   }
 
-  // Quest List (Default View)
+  // Quest List View (Default)
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Quests & Tasks Management</h1>
-          <p className="text-muted-foreground">Manage quests and their associated tasks</p>
+          <h1 className="text-2xl font-bold">Quest Management</h1>
+          <p className="text-muted-foreground">Manage and track your organization&apos;s quests</p>
         </div>
-        <div className="flex items-center gap-4">
-          {/* View Mode Toggle */}
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-600">View:</span>
-            <div className="flex border rounded-lg p-1 bg-gray-50">
-              <Button
-                variant={questViewMode === 'cards' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setQuestViewMode('cards')}
-                className="px-3 py-1 h-8"
-              >
-                <LayoutGrid className="h-4 w-4 mr-2" />
-                Cards
-              </Button>
-              <Button
-                variant={questViewMode === 'table' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setQuestViewMode('table')}
-                className="px-3 py-1 h-8"
-              >
-                <List className="h-4 w-4 mr-2" />
-                Table
-              </Button>
-            </div>
-          </div>
-          
-          <Button onClick={() => setViewMode('create-quest')}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Quest
-          </Button>
-        </div>
+        <Button onClick={() => setViewMode('create-quest')}>
+          <Plus className="h-4 w-4 mr-2" />
+          Create Quest
+        </Button>
       </div>
 
-      <div>
-        <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
           <h2 className="text-lg font-semibold">All Quests ({quests.length})</h2>
         </div>
         
-        {questViewMode === 'cards' ? (
-          <QuestCards 
-            quests={quests}
-            onView={handleViewQuest}
-            onEdit={handleEditQuest}
-            onDelete={handleDeleteQuest}
-            getPICName={getPICName}
-            getTaskCount={(questId) => {
-              return getTasksByQuestId ? 
-                getTasksByQuestId(questId).length : 
-                tasks.filter(task => task.attachedMoMIds?.includes(questId)).length;
-            }}
-          />
-        ) : (
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Quest Title</TableHead>
-                    <TableHead>PIC</TableHead>
-                    <TableHead>Tasks</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {quests.map((quest) => {
-                    const questTaskCount = getTasksByQuestId ? 
-                      getTasksByQuestId(quest.id).length : 
-                      tasks.filter(task => task.attachedMoMIds?.includes(quest.id)).length;
-
-                    return (
-                      <TableRow key={quest.id}>
-                        <TableCell>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <Target className="h-4 w-4 text-purple-500" />
-                              <p className="font-medium">{quest.title}</p>
-                            </div>
-                            <p className="text-sm text-gray-500 truncate max-w-xs mt-1">
-                              {quest.description}
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-blue-500" />
-                            <Badge variant="outline" className="text-sm">
-                              {getPICName(quest.assignedPICId)}
-                            </Badge>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <CheckSquare className="h-4 w-4 text-green-500" />
-                            <span className="font-medium">{questTaskCount} tasks</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-gray-500" />
-                            <span className="text-sm">
-                              {format(quest.createdAt, 'MMM dd, yyyy')}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewQuest(quest)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditQuest(quest)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeleteQuest(quest)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-
-              {quests.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p>No quests found. Create your first quest to get started.</p>
-                  <Button
-                    onClick={() => setViewMode('create-quest')}
-                    className="mt-4"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create First Quest
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+        {/* View Mode Toggle */}
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-600">View:</span>
+          <div className="flex border rounded-lg p-1 bg-gray-50">
+            <Button
+              variant={questViewMode === 'kanban' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setQuestViewMode('kanban')}
+              className="px-3 py-1 h-8"
+            >
+              <LayoutGrid className="h-4 w-4 mr-2" />
+              Kanban
+            </Button>
+            <Button
+              variant={questViewMode === 'table' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setQuestViewMode('table')}
+              className="px-3 py-1 h-8"
+            >
+              <List className="h-4 w-4 mr-2" />
+              Table
+            </Button>
+          </div>
+        </div>
       </div>
+        
+      {questViewMode === 'kanban' ? (
+        <QuestKanban 
+          quests={quests}
+          onView={handleViewQuest}
+          onEdit={handleEditQuest}
+          onDelete={handleDeleteQuest}
+          getPICName={getPICName}
+        />
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Quest Title</TableHead>
+                  <TableHead>PIC</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {quests.map((quest) => (
+                  <TableRow key={quest.id}>
+                    <TableCell>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Target className="h-4 w-4 text-purple-500" />
+                          <p className="font-medium">{quest.title}</p>
+                        </div>
+                        <p className="text-sm text-gray-500 truncate max-w-xs mt-1">
+                          {quest.description}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-blue-500" />
+                        <Badge variant="outline" className="text-sm">
+                          {getPICName(quest.assignedPICId)}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div className={`h-2 w-2 rounded-full ${
+                          quest.status === 'Done' ? 'bg-green-500' :
+                          quest.status === 'On Progress' ? 'bg-blue-500' :
+                          quest.status === 'Ready' ? 'bg-yellow-500' :
+                          'bg-gray-500'
+                        }`} />
+                        <Badge variant="outline" className="text-sm">
+                          {quest.status}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm">{format(quest.createdAt, 'MMM dd, yyyy')}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewQuest(quest)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditQuest(quest)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteQuest(quest)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                
+                {quests.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5}>
+                      <div className="text-center py-12 text-gray-500">
+                        <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p>No quests found. Create your first quest to get started.</p>
+                        <Button
+                          onClick={() => setViewMode('create-quest')}
+                          className="mt-4"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Create First Quest
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 } 

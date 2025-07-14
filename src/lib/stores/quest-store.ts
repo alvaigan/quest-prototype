@@ -19,7 +19,8 @@ export const useQuestStore = create<QuestState>((set, get) => ({
       title: 'Q1 Development Sprint',
       description: 'Oversee the completion of all Q1 development tasks',
       assignedPICId: '2',
-      associatedTaskIds: ['1', '2'],
+      status: 'On Progress',
+      attachedMoMId: '1',
       createdAt: new Date('2024-02-01'),
       updatedAt: new Date('2024-02-01'),
       createdBy: '1'
@@ -29,7 +30,8 @@ export const useQuestStore = create<QuestState>((set, get) => ({
       title: 'Database Optimization Project',
       description: 'Lead the database review and optimization initiative',
       assignedPICId: '3',
-      associatedTaskIds: ['3'],
+      status: 'Ready',
+      attachedMoMId: '2',
       createdAt: new Date('2024-02-10'),
       updatedAt: new Date('2024-02-10'),
       createdBy: '1'

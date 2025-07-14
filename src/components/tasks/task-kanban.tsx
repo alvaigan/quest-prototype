@@ -33,7 +33,6 @@ import { CSS } from '@dnd-kit/utilities';
 
 interface TaskKanbanProps {
   tasks: Task[];
-  questId?: string;
   onTaskUpdate?: () => void;
 }
 
@@ -44,7 +43,7 @@ const TASK_STATUS_COLUMNS = [
   { id: 'Blocked', title: 'Blocked', color: 'bg-red-50 border-red-200' }
 ];
 
-export function TaskKanban({ tasks, questId, onTaskUpdate }: TaskKanbanProps) {
+export function TaskKanban({ tasks, onTaskUpdate }: TaskKanbanProps) {
   const { employees } = useEmployeeStore();
   const { deleteTask, updateTask } = useTaskStore();
   
@@ -388,7 +387,6 @@ export function TaskKanban({ tasks, questId, onTaskUpdate }: TaskKanbanProps) {
           </DialogHeader>
           <TaskForm
             task={selectedTask || undefined}
-            questId={questId}
             onSuccess={handleFormSuccess}
             onCancel={() => setShowEditTaskDialog(false)}
           />

@@ -20,6 +20,9 @@ export const useMoMStore = create<MoMState>((set, get) => ({
       date: new Date('2024-02-01'),
       attendees: ['John Manager', 'Alice Johnson', 'Bob Smith'],
       content: '<h2>Meeting Agenda</h2><p>Discussed Q1 priorities and resource allocation.</p><ul><li>Login system implementation</li><li>UI/UX improvements</li><li>Database optimization</li></ul>',
+      location: 'Conference Room A',
+      duration: '2 hours',
+      toFollowUp: 'Follow up with development team on login system requirements\nSchedule UI/UX review session\nPrepare database optimization proposal',
       createdAt: new Date('2024-02-01'),
       updatedAt: new Date('2024-02-01'),
       createdBy: '1'
@@ -30,6 +33,9 @@ export const useMoMStore = create<MoMState>((set, get) => ({
       date: new Date('2024-02-15'),
       attendees: ['Sarah Smith', 'Alice Johnson', 'Charlie Brown'],
       content: '<h2>Database Schema Review</h2><p>Reviewed current database structure and identified optimization opportunities.</p><h3>Key Points:</h3><ul><li>Index optimization needed</li><li>Query performance improvements</li><li>Data normalization review</li></ul>',
+      location: 'Virtual Meeting',
+      duration: '1.5 hours',
+      toFollowUp: 'Implement database indexing improvements\nRun performance tests on optimized queries\nDocument normalization recommendations',
       createdAt: new Date('2024-02-15'),
       updatedAt: new Date('2024-02-15'),
       createdBy: '2'

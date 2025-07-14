@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-
+import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
@@ -15,7 +15,7 @@ import { MoM } from '@/lib/types';
 import { useMoMStore } from '@/lib/stores/mom-store';
 import { useEmployeeStore } from '@/lib/stores/employee-store';
 import { useAuthStore } from '@/lib/stores/auth-store';
-import { ArrowLeft, Save, Calendar, Users, FileText, Clock } from 'lucide-react';
+import { ArrowLeft, Save, Calendar, Users, FileText, Clock, CheckSquare } from 'lucide-react';
 import { format } from 'date-fns';
 
 const momSchema = z.object({
@@ -25,6 +25,7 @@ const momSchema = z.object({
   content: z.string().min(1, 'Content is required'),
   location: z.string().optional(),
   duration: z.string().optional(),
+  toFollowUp: z.string().optional(),
 });
 
 type MoMFormData = z.infer<typeof momSchema>;
@@ -51,6 +52,7 @@ export function MoMFormFullpage({ mom, onBack }: MoMFormFullpageProps) {
       content: mom?.content || '',
       location: mom?.location || '',
       duration: mom?.duration || '',
+      toFollowUp: mom?.toFollowUp || '',
     }
   });
 
@@ -63,6 +65,7 @@ export function MoMFormFullpage({ mom, onBack }: MoMFormFullpageProps) {
         date: new Date(data.date),
         location: data.location || undefined,
         duration: data.duration || undefined,
+        toFollowUp: data.toFollowUp || undefined,
         createdBy: currentUser?.id || '1',
       };
 
@@ -273,6 +276,33 @@ export function MoMFormFullpage({ mom, onBack }: MoMFormFullpageProps) {
                       </div>
                     </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* To Follow Up */}
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="toFollowUp"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <CheckSquare className="h-5 w-5 text-orange-500" />
+                      To Follow Up (Optional)
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Enter items that need follow-up actions...&#10;• Follow up with development team&#10;• Schedule next review meeting&#10;• Prepare progress report"
+                        className="min-h-[120px] text-sm"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                    <p className="text-xs text-gray-500">
+                      Use line breaks to separate different follow-up items for better organization.
+                    </p>
                   </FormItem>
                 )}
               />

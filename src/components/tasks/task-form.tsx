@@ -14,7 +14,6 @@ import { TASK_STATUS_OPTIONS, Task } from '@/lib/types';
 import { useTaskStore } from '@/lib/stores/task-store';
 import { useEmployeeStore } from '@/lib/stores/employee-store';
 import { useMoMStore } from '@/lib/stores/mom-store';
-import { useQuestStore } from '@/lib/stores/quest-store';
 import { useAuthStore } from '@/lib/stores/auth-store';
 
 const taskSchema = z.object({
@@ -30,16 +29,14 @@ type TaskFormData = z.infer<typeof taskSchema>;
 
 interface TaskFormProps {
   task?: Task;
-  questId?: string; // Optional quest ID to associate the task with
   onSuccess?: () => void;
   onCancel?: () => void;
 }
 
-export function TaskForm({ task, questId, onSuccess, onCancel }: TaskFormProps) {
+export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
   const { addTask, updateTask } = useTaskStore();
   const { employees } = useEmployeeStore();
   const { moms } = useMoMStore();
-  const { updateQuest, getQuestById } = useQuestStore();
   const { currentUser } = useAuthStore();
   const isEditing = !!task;
 
@@ -66,17 +63,7 @@ export function TaskForm({ task, questId, onSuccess, onCancel }: TaskFormProps) 
     if (isEditing) {
       updateTask(task.id, taskData);
     } else {
-      // Create new task
-      const newTaskId = addTask(taskData);
-      
-      // If questId is provided, associate the task with the quest
-      if (questId && newTaskId) {
-        const quest = getQuestById(questId);
-        if (quest) {
-          const updatedAssociatedTaskIds = [...quest.associatedTaskIds, newTaskId];
-          updateQuest(questId, { associatedTaskIds: updatedAssociatedTaskIds });
-        }
-      }
+      addTask(taskData);
     }
     
     onSuccess?.();
